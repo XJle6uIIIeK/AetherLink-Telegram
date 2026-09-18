@@ -1,0 +1,15 @@
+services:
+  aetherlink:
+    build: .
+    restart: unless-stopped
+    environment:
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      MCP_PATH_KEY: ${MCP_PATH_KEY}
+      RESPONSE_TIMEOUT_MS: ${RESPONSE_TIMEOUT_MS:-300000}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+    ports:
+      - "3000:3000"
+    volumes:
+      - aetherlink-data:/data
+volumes:
+  aetherlink-data:

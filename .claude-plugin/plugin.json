@@ -1,0 +1,17 @@
+{
+  "name": "Aetherlink-Telegram",
+  "version": "2.0.0",
+  "description": "Telegram bridge for MCP agents with secure one-time pairing, confirmations, task inbox, files, screenshots and remote control.",
+  "author": { "name": "AetherLink" },
+  "homepage": "https://github.com/XJle6uIIIeK/AetherLink-Telegram",
+  "repository": "https://github.com/XJle6uIIIeK/AetherLink-Telegram",
+  "license": "MIT",
+  "keywords": ["telegram", "mcp", "remote-control", "notifications", "approvals"],
+  "mcpServers": {
+    "Aetherlink-Telegram": {
+      "command": "node",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/start.mjs"]
+    }
+  },
+  "skills": "./skills/"
+}
