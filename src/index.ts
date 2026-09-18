@@ -6,7 +6,7 @@ import {
 } from '@modelcontextprotocol/sdk/types.js';
 import { TelegramBridge } from './telegram.js';
 import type { TaskStatus } from './task-store.js';
-import { config } from 'dotenv';
+import fs from 'node:fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -14,7 +14,24 @@ import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.join(__dirname, '..');
-config({ path: path.join(projectRoot, '.env') });
+function loadDotEnv(file: string): void {
+  try {
+    const text = fs.readFileSync(file, 'utf8');
+    for (const rawLine of text.split(/\r?\n/)) {
+      const line = rawLine.trim();
+      if (!line || line.startsWith('#')) continue;
+      const eq = line.indexOf('=');
+      if (eq < 1) continue;
+      const key = line.slice(0, eq).trim();
+      let value = line.slice(eq + 1).trim();
+      if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
+        value = value.slice(1, -1);
+      }
+      if (!(key in process.env)) process.env[key] = value;
+    }
+  } catch {}
+}
+loadDotEnv(path.join(projectRoot, '.env'));
 
 // Redirect console.log → stderr (stdout is reserved for MCP JSON-RPC)
 const _origLog = console.log;

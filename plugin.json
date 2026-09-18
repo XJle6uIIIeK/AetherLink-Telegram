@@ -7,8 +7,6 @@
     "name": "AetherLink"
   },
   "license": "MIT",
-  "homepage": "https://github.com/XJle6uIIIeK/AetherLink-Telegram#readme",
-  "repository": "https://github.com/XJle6uIIIeK/AetherLink-Telegram",
   "keywords": [
     "telegram",
     "mcp",
@@ -29,11 +27,10 @@
           "Read",
           "Write"
         ],
-        "defaultPrompt": "Check my AetherLink Telegram inbox and tell me whether anything needs my attention.",
-        "websiteURL": "https://github.com/XJle6uIIIeK/AetherLink-Telegram",
-        "composerIcon": "./assets/icon.svg",
-        "logo": "./assets/icon.svg"
+        "defaultPrompt": "Check my AetherLink Telegram inbox and tell me whether anything needs my attention."
       }
     }
-  }
+  },
+  "homepage": "https://github.com/XJle6uIIIeK/AetherLink-Telegram#readme",
+  "repository": "https://github.com/XJle6uIIIeK/AetherLink-Telegram"
 }

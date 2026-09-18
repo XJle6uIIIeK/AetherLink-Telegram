@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import crypto from 'node:crypto';
-import express from 'express';
+import http from 'node:http';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { TelegramBridge } from './dist/telegram.js';
 import { createMcpServer } from './dist/server-factory.js';
@@ -218,11 +218,101 @@ function pageShell(title, body, script = '') {
   :root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;background:#101114;color:#f2f3f5;font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif}.card{width:min(590px,calc(100% - 28px));background:#191b20;border:1px solid #30333a;border-radius:20px;padding:28px;box-shadow:0 20px 80px #0007}h1{margin:0 0 10px;font-size:28px}.muted{color:#a7abb5;line-height:1.55}.bot{padding:12px 14px;background:#111318;border:1px solid #2b2e35;border-radius:12px;margin:16px 0}label{display:block;font-weight:700;margin:18px 0 8px}input{width:100%;padding:13px 14px;border-radius:11px;border:1px solid #3a3e47;background:#0f1115;color:#fff;font:inherit}.btn,button{width:100%;display:block;border:0;border-radius:11px;padding:14px 16px;background:#2aabee;color:white;text-align:center;text-decoration:none;font:inherit;font-weight:800;cursor:pointer;margin-top:16px}.secondary{background:#2a2d34}.ok{color:#73d99b}.warn{color:#ffcb6b}.err{color:#ff8080}.small{font-size:13px;color:#858b97;margin-top:16px}code{word-break:break-all}</style></head><body><main class="card">${body}</main>${script}</body></html>`;
 }
 
-const app = express();
-app.disable('x-powered-by');
-app.set('trust proxy', true);
-app.use(express.json({ limit: '1mb' }));
-app.use(express.urlencoded({ extended: false, limit: '128kb' }));
+function createHttpApp() {
+  const routes = [];
+
+  function add(method, routePath, ...handlers) {
+    routes.push({ method, routePath, handlers });
+  }
+
+  async function parseBody(req) {
+    if (req.method === 'GET' || req.method === 'HEAD') return undefined;
+    const chunks = [];
+    let size = 0;
+    for await (const chunk of req) {
+      size += chunk.length;
+      if (size > 1024 * 1024) throw Object.assign(new Error('Request body too large'), { statusCode: 413 });
+      chunks.push(chunk);
+    }
+    if (!chunks.length) return undefined;
+    const text = Buffer.concat(chunks).toString('utf8');
+    const type = String(req.headers['content-type'] || '').split(';', 1)[0].trim().toLowerCase();
+    if (type === 'application/json' || type === 'application/json-rpc') {
+      try { return JSON.parse(text); } catch { throw Object.assign(new Error('Invalid JSON body'), { statusCode: 400 }); }
+    }
+    if (type === 'application/x-www-form-urlencoded') return Object.fromEntries(new URLSearchParams(text));
+    return text;
+  }
+
+  function enhanceResponse(res) {
+    res.status = (code) => { res.statusCode = code; return res; };
+    res.json = (value) => {
+      if (!res.headersSent) res.setHeader('Content-Type', 'application/json; charset=utf-8');
+      res.end(JSON.stringify(value));
+      return res;
+    };
+    res.type = (value) => {
+      const mapped = value === 'html' ? 'text/html; charset=utf-8' : value;
+      if (!res.headersSent) res.setHeader('Content-Type', mapped);
+      return res;
+    };
+    res.send = (value) => {
+      if (Buffer.isBuffer(value) || typeof value === 'string') res.end(value);
+      else res.json(value);
+      return res;
+    };
+    res.redirect = (code, location) => {
+      res.statusCode = code;
+      res.setHeader('Location', location);
+      res.end();
+      return res;
+    };
+    return res;
+  }
+
+  async function dispatch(req, res, handlers) {
+    let nextPromise = null;
+    async function run(index) {
+      const handler = handlers[index];
+      if (!handler || res.writableEnded) return;
+      nextPromise = null;
+      const next = () => { nextPromise = run(index + 1); return nextPromise; };
+      await handler(req, res, next);
+      if (nextPromise) await nextPromise;
+    }
+    await run(0);
+  }
+
+  const app = {
+    get: (routePath, ...handlers) => add('GET', routePath, ...handlers),
+    post: (routePath, ...handlers) => add('POST', routePath, ...handlers),
+    all: (routePath, ...handlers) => add('ALL', routePath, ...handlers),
+    listen(port, host, callback) {
+      const server = http.createServer(async (req, rawRes) => {
+        const res = enhanceResponse(rawRes);
+        try {
+          const base = `http://${req.headers.host || 'localhost'}`;
+          const parsed = new URL(req.url || '/', base);
+          req.query = Object.fromEntries(parsed.searchParams.entries());
+          req.protocol = req.socket.encrypted ? 'https' : 'http';
+          req.body = await parseBody(req);
+          const route = routes.find((item) => item.routePath === parsed.pathname && (item.method === 'ALL' || item.method === req.method));
+          if (!route) return res.status(404).json({ error: 'not_found' });
+          await dispatch(req, res, route.handlers);
+        } catch (error) {
+          const status = Number(error?.statusCode || 500);
+          console.error('[HTTP]', error instanceof Error ? error.message : error);
+          if (!res.headersSent) res.status(status).json({ error: status === 500 ? 'internal_server_error' : String(error?.message || 'request_error') });
+          else if (!res.writableEnded) res.end();
+        }
+      });
+      return server.listen(port, host, callback);
+    },
+  };
+  return app;
+}
+
+const app = createHttpApp();
 
 app.get('/health', (_req, res) => {
   cleanupStore();

@@ -18,10 +18,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.1",
-    "grammy": "^1.35.0",
-    "dotenv": "^16.4.7",
-    "playwright": "^1.49.0",
-    "express": "^5.1.0"
+    "grammy": "^1.35.0"
   },
   "devDependencies": {
     "typescript": "^5.7.0",

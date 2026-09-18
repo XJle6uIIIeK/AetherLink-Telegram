@@ -1,5 +1,5 @@
 {
-  "name": "Aetherlink-Telegram",
+  "name": "aetherlink-telegram",
   "version": "2.1.0",
   "description": "Telegram bridge for MCP agents with secure one-time pairing, confirmations, task inbox, files, screenshots and remote control.",
   "author": {
@@ -16,7 +16,7 @@
     "approvals"
   ],
   "mcpServers": {
-    "Aetherlink-Telegram": {
+    "aetherlink-telegram": {
       "command": "node",
       "args": [
         "${CLAUDE_PLUGIN_ROOT}/start.mjs"

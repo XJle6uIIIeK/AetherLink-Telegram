@@ -2,7 +2,6 @@ import { Bot, InlineKeyboard, GrammyError, HttpError, InputFile, InputMediaBuild
 import fs from 'fs';
 import path from 'path';
 import { spawn, ChildProcess } from 'child_process';
-import { chromium } from 'playwright';
 import {
   CreateTaskInput,
   TaskStatus,
@@ -1301,28 +1300,50 @@ export class TelegramBridge {
   }
 
   async takeScreenshot(url: string, caption?: string): Promise<string> {
-    const browser = await chromium.launch({ headless: true });
-    const context = await browser.newContext();
-    const page = await context.newPage();
-    
-    // Set typical desktop view
-    await page.setViewportSize({ width: 1280, height: 800 });
-    
-    await page.goto(url, { waitUntil: 'networkidle', timeout: 30000 });
-    
-    const screenshotDir = path.join(process.cwd(), 'data', 'screenshots');
+    const screenshotDir = path.join(path.dirname(this.chatIdFile), 'screenshots');
     if (!fs.existsSync(screenshotDir)) fs.mkdirSync(screenshotDir, { recursive: true });
-    
-    const filename = `screenshot_${Date.now()}.png`;
-    const screenshotPath = path.join(screenshotDir, filename);
-    
-    await page.screenshot({ path: screenshotPath, fullPage: false });
-    await browser.close();
-    
-    // Upload screenshot to telegram
-    await this.sendFile(screenshotPath, caption || `📸 Screenshot of ${url}`);
-    
-    return screenshotPath;
+    const screenshotPath = path.join(screenshotDir, `screenshot_${Date.now()}.png`);
+
+    const candidates = process.platform === 'win32'
+      ? [
+          process.env.CHROME_PATH,
+          path.join(process.env.PROGRAMFILES || '', 'Google/Chrome/Application/chrome.exe'),
+          path.join(process.env['PROGRAMFILES(X86)'] || '', 'Microsoft/Edge/Application/msedge.exe'),
+        ]
+      : process.platform === 'darwin'
+        ? [process.env.CHROME_PATH, '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', '/Applications/Chromium.app/Contents/MacOS/Chromium']
+        : [process.env.CHROME_PATH, 'google-chrome', 'google-chrome-stable', 'chromium', 'chromium-browser'];
+
+    let lastError = '';
+    for (const executable of candidates.filter(Boolean) as string[]) {
+      try {
+        await new Promise<void>((resolve, reject) => {
+          const child = spawn(executable, [
+            '--headless=new',
+            '--disable-gpu',
+            '--no-sandbox',
+            '--hide-scrollbars',
+            '--window-size=1280,800',
+            `--screenshot=${screenshotPath}`,
+            url,
+          ], { stdio: 'ignore' });
+          const timer = setTimeout(() => { child.kill(); reject(new Error('Browser screenshot timed out')); }, 30000);
+          child.once('error', (error) => { clearTimeout(timer); reject(error); });
+          child.once('exit', (code) => {
+            clearTimeout(timer);
+            code === 0 && fs.existsSync(screenshotPath)
+              ? resolve()
+              : reject(new Error(`Browser exited with code ${code ?? 'unknown'}`));
+          });
+        });
+        await this.sendFile(screenshotPath, caption || `📸 Screenshot of ${url}`);
+        return screenshotPath;
+      } catch (error) {
+        lastError = error instanceof Error ? error.message : String(error);
+      }
+    }
+
+    throw new Error(`No usable Chrome/Chromium browser found. Set CHROME_PATH to a browser executable. ${lastError}`.trim());
   }
 
   getMessages(): QueuedMessage[] {

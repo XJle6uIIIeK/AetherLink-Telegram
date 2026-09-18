@@ -1,12 +1,7 @@
 {
   "name": "aetherlink-telegram",
-  "owner": {
-    "name": "AetherLink"
-  },
-  "metadata": {
-    "description": "AetherLink Telegram plugin marketplace",
-    "version": "2.1.0"
-  },
+  "owner": { "name": "AetherLink" },
+  "metadata": { "description": "AetherLink Telegram plugin marketplace", "version": "2.1.0" },
   "plugins": [
     {
       "name": "aetherlink-telegram",
