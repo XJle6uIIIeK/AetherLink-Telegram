@@ -40,7 +40,7 @@ const CHAT_ID = process.env.TELEGRAM_CHAT_ID
     : undefined;
 const TIMEOUT_MS = parseInt(process.env.RESPONSE_TIMEOUT_MS || '300000', 10);
 if (!BOT_TOKEN) {
-    console.error('[MCP] TELEGRAM_BOT_TOKEN is required in .env');
+    console.error('[MCP] TELEGRAM_BOT_TOKEN is required');
     process.exit(1);
 }
 // ── Telegram ────────────────────────────────────────────────────────────────
@@ -50,7 +50,7 @@ const telegram = new TelegramBridge(BOT_TOKEN, {
     timeoutMs: TIMEOUT_MS,
 });
 // ── MCP Server ──────────────────────────────────────────────────────────────
-const server = new Server({ name: 'antigravity-telegram', version: '2.1.0' }, { capabilities: { tools: {} } });
+const server = new Server({ name: 'antigravity-telegram', version: '2.2.0' }, { capabilities: { tools: {} } });
 // ── Tools: List ─────────────────────────────────────────────────────────────
 server.setRequestHandler(ListToolsRequestSchema, async () => ({
     tools: [

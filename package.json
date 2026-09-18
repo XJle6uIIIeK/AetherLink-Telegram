@@ -1,17 +1,14 @@
 {
-  "name": "antigravity-telegram-mcp",
-  "version": "2.1.0",
-  "description": "AetherLink Telegram MCP plugin with secure one-time pairing, ChatGPT OAuth 2.1, and local/remote transports",
+  "name": "aetherlink-telegram-mcp",
+  "version": "2.2.0",
+  "description": "Local stdio MCP bridge between AI agents and a private Telegram bot",
   "type": "module",
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
     "test": "npm run build && node --test test/*.test.mjs",
     "start": "node start.mjs",
-    "dev": "npx tsx src/index.ts",
-    "start:remote": "node remote.mjs",
-    "test:oauth": "node test/oauth-smoke.mjs",
-    "configure": "node scripts/configure.mjs"
+    "dev": "npx tsx src/index.ts"
   },
   "engines": {
     "node": ">=22.5.0"

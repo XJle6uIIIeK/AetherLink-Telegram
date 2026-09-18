@@ -16,6 +16,12 @@ const pairingFile = path.join(dataDir, 'pairing_key.txt');
 fs.mkdirSync(appDir, { recursive: true });
 fs.mkdirSync(dataDir, { recursive: true });
 
+const [nodeMajor, nodeMinor] = process.versions.node.split('.').map(Number);
+if (nodeMajor < 22 || (nodeMajor === 22 && nodeMinor < 5)) {
+  console.error(`[AetherLink] Node.js 22.5+ is required. Current: ${process.versions.node}`);
+  process.exit(1);
+}
+
 function readConfig() {
   try { return JSON.parse(fs.readFileSync(configFile, 'utf8')); } catch { return {}; }
 }
@@ -57,8 +63,8 @@ async function setupWizard(existing = {}) {
   const server = http.createServer(async (req, res) => {
     if (req.method === 'GET') {
       res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' });
-      res.end(`<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>AetherLink setup</title><style>
-      body{font-family:system-ui,-apple-system,sans-serif;background:#111;color:#eee;display:grid;place-items:center;min-height:100vh;margin:0}.card{width:min(560px,calc(100% - 32px));background:#1b1b1b;border:1px solid #333;border-radius:18px;padding:28px;box-sizing:border-box}h1{margin:0 0 8px;font-size:26px}p{color:#bdbdbd;line-height:1.45}label{display:block;margin:18px 0 8px;font-weight:650}input{width:100%;box-sizing:border-box;padding:13px 14px;border-radius:10px;border:1px solid #444;background:#101010;color:#fff;font:inherit}button{margin-top:18px;width:100%;border:0;border-radius:10px;padding:13px 16px;font:inherit;font-weight:750;cursor:pointer}.small{font-size:13px;color:#8d8d8d}</style></head><body><main class="card"><h1>Telegram MCP setup</h1><p>Введите токен бота от @BotFather. Токен будет сохранён только локально в <code>${configFile.replaceAll('&','&amp;').replaceAll('<','&lt;')}</code>.</p><form method="post" action="/save"><label>Bot token</label><input type="password" name="token" autocomplete="off" placeholder="123456:ABC…" required><button type="submit">Сохранить и подключить</button></form><p class="small">После сохранения появится кнопка привязки Telegram через одноразовый /start-ключ.</p></main></body></html>`);
+      res.end(`<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>AetherLink local setup</title><style>
+      body{font-family:system-ui,-apple-system,sans-serif;background:#111;color:#eee;display:grid;place-items:center;min-height:100vh;margin:0}.card{width:min(560px,calc(100% - 32px));background:#1b1b1b;border:1px solid #333;border-radius:18px;padding:28px;box-sizing:border-box}h1{margin:0 0 8px;font-size:26px}p{color:#bdbdbd;line-height:1.45}label{display:block;margin:18px 0 8px;font-weight:650}input{width:100%;box-sizing:border-box;padding:13px 14px;border-radius:10px;border:1px solid #444;background:#101010;color:#fff;font:inherit}button{margin-top:18px;width:100%;border:0;border-radius:10px;padding:13px 16px;font:inherit;font-weight:750;cursor:pointer}.small{font-size:13px;color:#8d8d8d}</style></head><body><main class="card"><h1>AetherLink Telegram — local setup</h1><p>Введите токен бота от @BotFather. MCP работает локально через stdio, а токен будет сохранён только на этом компьютере в <code>${configFile.replaceAll('&','&amp;').replaceAll('<','&lt;')}</code>.</p><form method="post" action="/save"><label>Bot token</label><input type="password" name="token" autocomplete="off" placeholder="123456:ABC…" required><button type="submit">Сохранить и подключить</button></form><p class="small">После сохранения появится кнопка привязки Telegram через одноразовый /start-ключ.</p></main></body></html>`);
       return;
     }
     if (req.method === 'POST' && req.url === '/save') {
@@ -90,8 +96,9 @@ async function setupWizard(existing = {}) {
 
 async function ensureDependencies() {
   const sdkMarker = path.join(root, 'node_modules', '@modelcontextprotocol', 'sdk', 'package.json');
-  if (fs.existsSync(sdkMarker)) return;
-  console.error('[AetherLink] Installing runtime dependencies…');
+  const grammyMarker = path.join(root, 'node_modules', 'grammy', 'package.json');
+  if (fs.existsSync(sdkMarker) && fs.existsSync(grammyMarker)) return;
+  console.error('[AetherLink] Installing local runtime dependencies…');
   await new Promise((resolve, reject) => {
     const child = spawn(process.platform === 'win32' ? 'npm.cmd' : 'npm', ['install', '--omit=dev', '--no-audit', '--no-fund'], { cwd: root, stdio: ['ignore', 'inherit', 'inherit'] });
     child.on('exit', (code) => code === 0 ? resolve() : reject(new Error(`npm install failed with code ${code}`)));
@@ -101,12 +108,24 @@ async function ensureDependencies() {
 
 let cfg = readConfig();
 let token = process.env.TELEGRAM_BOT_TOKEN || cfg.telegramBotToken;
+let configuredNow = false;
 if (!token) {
   const result = await setupWizard(cfg);
   token = result.token;
+  configuredNow = true;
   cfg = readConfig();
 }
 const key = pairingKey();
+if (key && !configuredNow) {
+  try {
+    const info = await botInfo(token);
+    const link = `https://t.me/${info.username}?start=${encodeURIComponent(key)}`;
+    console.error(`[AetherLink] Telegram pairing required: ${link}`);
+    openBrowser(link);
+  } catch (error) {
+    console.error('[AetherLink] Could not prepare Telegram pairing:', error instanceof Error ? error.message : String(error));
+  }
+}
 process.env.TELEGRAM_BOT_TOKEN = token;
 process.env.AETHERLINK_DATA_DIR = dataDir;
 if (key) process.env.AETHERLINK_PAIRING_KEY = key;
@@ -114,4 +133,5 @@ if (!process.env.RESPONSE_TIMEOUT_MS && cfg.responseTimeoutMs) process.env.RESPO
 if (!process.env.GEMINI_API_KEY && cfg.geminiApiKey) process.env.GEMINI_API_KEY = cfg.geminiApiKey;
 
 await ensureDependencies();
+console.error('[AetherLink] Starting local stdio MCP v2.2.0');
 await import(pathToFileURL(path.join(root, 'dist', 'index.js')).href);

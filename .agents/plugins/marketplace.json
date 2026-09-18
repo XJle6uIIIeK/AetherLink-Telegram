@@ -1,13 +1,13 @@
 {
   "name": "aetherlink-telegram",
   "owner": { "name": "AetherLink" },
-  "metadata": { "description": "AetherLink Telegram plugin marketplace", "version": "2.1.0" },
+  "metadata": { "description": "Local AetherLink Telegram stdio plugin", "version": "2.2.0" },
   "plugins": [
     {
       "name": "aetherlink-telegram",
       "source": "./",
-      "description": "Telegram bridge with secure one-time pairing for MCP agents.",
-      "version": "2.1.0"
+      "description": "Local stdio Telegram bridge with one-time pairing for MCP agents.",
+      "version": "2.2.0"
     }
   ]
 }

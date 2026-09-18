@@ -1,8 +1,8 @@
 {
   "mcpServers": {
     "aetherlink-telegram": {
-      "type": "http",
-      "url": "https://aetherlink.example.com/mcp"
+      "command": "node",
+      "args": ["start.mjs"]
     }
   }
 }
