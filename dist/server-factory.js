@@ -5,7 +5,7 @@ import path from 'node:path';
 export function createMcpServer(telegram, options = {}) {
   const oauthScopes = Array.isArray(options.oauthScopes) ? options.oauthScopes : null;
   const profile = options.profile || null;
-  const server = new Server({ name: 'antigravity-telegram', version: '2.1.0' }, { capabilities: { tools: {} } });
+  const server = new Server({ name: 'antigravity-telegram', version: '2.1.1' }, { capabilities: { tools: {} } });
   // ── Tools: List ─────────────────────────────────────────────────────────────
   server.setRequestHandler(ListToolsRequestSchema, async () => ({
       tools: [
@@ -289,9 +289,44 @@ export function createMcpServer(telegram, options = {}) {
               ...(oauthScopes ? { securitySchemes: [{ type: 'oauth2', scopes: oauthScopes }] } : {}),
               _meta: { 'openai/profile': true },
           }] : []),
-      ].map((tool) => oauthScopes && tool.name !== 'get_profile'
-          ? { ...tool, securitySchemes: [{ type: 'oauth2', scopes: oauthScopes }] }
-          : tool),
+      ].map((tool) => {
+          const readOnly = new Set(['tg_inbox', 'tg_task_status', 'get_profile']).has(tool.name);
+          const openWorld = tool.name === 'tg_take_screenshot';
+          const titles = {
+              tg_notify: 'Send Telegram notification',
+              tg_confirm: 'Request Telegram confirmation',
+              tg_ask: 'Ask via Telegram',
+              tg_inbox: 'Read Telegram task inbox',
+              tg_ack: 'Acknowledge Telegram tasks',
+              tg_progress: 'Update Telegram task progress',
+              tg_complete: 'Complete Telegram task',
+              tg_fail: 'Fail Telegram task',
+              tg_cancelled: 'Check or mark cancellation',
+              tg_task_status: 'Read Telegram task status',
+              tg_get_tasks: 'Get and accept Telegram tasks',
+              tg_send_file: 'Send file to Telegram',
+              tg_send_files: 'Send files to Telegram',
+              tg_take_screenshot: 'Capture and send screenshot',
+              get_profile: 'Get connected Telegram profile',
+          };
+          const annotations = {
+              readOnlyHint: readOnly,
+              destructiveHint: false,
+              openWorldHint: openWorld,
+              idempotentHint: readOnly,
+          };
+          const scopes = readOnly ? ['telegram:read'] : ['telegram:write'];
+          const securitySchemes = oauthScopes ? [{ type: 'oauth2', scopes }] : undefined;
+          return {
+              title: titles[tool.name] || tool.name,
+              ...tool,
+              annotations: { ...(tool.annotations || {}), ...annotations },
+              ...(securitySchemes ? {
+                  securitySchemes,
+                  _meta: { ...(tool._meta || {}), securitySchemes },
+              } : {}),
+          };
+      }),
   }));
   // ── Tools: Call ─────────────────────────────────────────────────────────────
   server.setRequestHandler(CallToolRequestSchema, async (request) => {
