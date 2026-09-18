@@ -1,6 +1,6 @@
 {
   "name": "aetherlink-telegram",
-  "version": "2.2.0",
+  "version": "2.2.2",
   "description": "Local stdio Telegram bridge for MCP agents with secure one-time pairing, confirmations, inbox, files and task progress.",
   "author": {
     "name": "AetherLink"

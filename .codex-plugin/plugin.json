@@ -1,6 +1,6 @@
 {
   "name": "aetherlink-telegram",
-  "version": "2.2.1",
+  "version": "2.2.2",
   "description": "Local Telegram bridge for Codex and ChatGPT Desktop over stdio MCP.",
   "skills": "./skills/",
   "mcpServers": "./.mcp.json",

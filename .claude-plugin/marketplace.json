@@ -1,13 +1,13 @@
 {
   "name": "aetherlink-telegram",
   "owner": { "name": "AetherLink" },
-  "metadata": { "description": "Local AetherLink Telegram stdio MCP plugin", "version": "2.2.0" },
+  "metadata": { "description": "Local AetherLink Telegram stdio MCP plugin", "version": "2.2.2" },
   "plugins": [
     {
       "name": "aetherlink-telegram",
       "source": "./",
       "description": "Local stdio Telegram bridge for MCP-capable agents.",
-      "version": "2.2.0",
+      "version": "2.2.2",
       "author": { "name": "AetherLink" },
       "category": "productivity",
       "keywords": ["telegram", "mcp", "stdio", "local", "notifications"]

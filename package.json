@@ -1,6 +1,6 @@
 {
   "name": "aetherlink-telegram-mcp",
-  "version": "2.2.1",
+  "version": "2.2.2",
   "description": "AetherLink Telegram local stdio MCP plugin for Codex and ChatGPT Desktop",
   "type": "module",
   "main": "dist/index.js",
