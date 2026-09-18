@@ -12,6 +12,9 @@ export declare class TelegramBridge {
     private promptRequests;
     private pendingPhotoAlbums;
     private chatIdFile;
+    private pairingKeyFile;
+    private pairingKey;
+    private pairingExpiresAt;
     private defaultTimeout;
     private activeProcesses;
     private geminiApiKey;
@@ -22,6 +25,8 @@ export declare class TelegramBridge {
         chatId?: number;
         dataDir?: string;
         timeoutMs?: number;
+        pairingKey?: string;
+        pairingExpiresAt?: number;
     });
     private loadChatId;
     private saveChatId;

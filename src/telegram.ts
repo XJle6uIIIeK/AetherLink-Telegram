@@ -62,6 +62,7 @@ export class TelegramBridge {
   private chatIdFile: string;
   private pairingKeyFile: string;
   private pairingKey: string | null = null;
+  private pairingExpiresAt: number | null = null;
   private defaultTimeout: number;
 
   // Remote Shell state
@@ -76,7 +77,7 @@ export class TelegramBridge {
   private pathIdCounter = 0;
 
 
-  constructor(token: string, options?: { chatId?: number; dataDir?: string; timeoutMs?: number }) {
+  constructor(token: string, options?: { chatId?: number; dataDir?: string; timeoutMs?: number; pairingKey?: string; pairingExpiresAt?: number }) {
     this.bot = new Bot(token);
     this.defaultTimeout = options?.timeoutMs ?? 300_000;
     this.geminiApiKey = process.env.GEMINI_API_KEY || null;
@@ -85,7 +86,8 @@ export class TelegramBridge {
     if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
     this.chatIdFile = path.join(dataDir, 'chat_id.txt');
     this.pairingKeyFile = path.join(dataDir, 'pairing_key.txt');
-    this.pairingKey = process.env.AETHERLINK_PAIRING_KEY || null;
+    this.pairingKey = options?.pairingKey ?? process.env.AETHERLINK_PAIRING_KEY ?? null;
+    this.pairingExpiresAt = options?.pairingExpiresAt ?? null;
     this.taskStore = new TaskStore(path.join(dataDir, 'tasks.sqlite'));
 
     if (options?.chatId) {
@@ -354,10 +356,11 @@ export class TelegramBridge {
         const text = ctx.message?.text?.trim() ?? '';
         const match = text.match(/^\/start(?:@\w+)?(?:\s+(.+))?$/);
         const suppliedKey = match?.[1]?.trim();
-        if (senderId && this.pairingKey && suppliedKey === this.pairingKey) {
+        if (senderId && this.pairingKey && (!this.pairingExpiresAt || Date.now() <= this.pairingExpiresAt) && suppliedKey === this.pairingKey) {
           this.chatId = senderId;
           this.saveChatId(senderId);
           this.pairingKey = null;
+          this.pairingExpiresAt = null;
           delete process.env.AETHERLINK_PAIRING_KEY;
           try { fs.unlinkSync(this.pairingKeyFile); } catch { /* already removed */ }
           console.error(`[Security] Telegram owner paired: ${senderId}`);

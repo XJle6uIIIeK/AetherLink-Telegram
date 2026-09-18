@@ -29,7 +29,7 @@ const telegram = new TelegramBridge(BOT_TOKEN, {
     timeoutMs: TIMEOUT_MS,
 });
 // ── MCP Server ──────────────────────────────────────────────────────────────
-const server = new Server({ name: 'antigravity-telegram', version: '2.0.0' }, { capabilities: { tools: {} } });
+const server = new Server({ name: 'antigravity-telegram', version: '2.1.0' }, { capabilities: { tools: {} } });
 // ── Tools: List ─────────────────────────────────────────────────────────────
 server.setRequestHandler(ListToolsRequestSchema, async () => ({
     tools: [

@@ -1,0 +1,7 @@
+{
+  "name": "aetherlink-telegram",
+  "version": "2.1.0",
+  "description": "Telegram MCP bridge with ChatGPT OAuth and one-time pairing.",
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json"
+}

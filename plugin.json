@@ -1,0 +1,39 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "aetherlink-telegram",
+  "version": "2.1.0",
+  "description": "Connect ChatGPT, Codex, Claude and MCP clients to a private Telegram bot for notifications, confirmations, questions, tasks and file delivery.",
+  "author": {
+    "name": "AetherLink"
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/XJle6uIIIeK/AetherLink-Telegram#readme",
+  "repository": "https://github.com/XJle6uIIIeK/AetherLink-Telegram",
+  "keywords": [
+    "telegram",
+    "mcp",
+    "chatgpt",
+    "oauth",
+    "notifications",
+    "remote-control"
+  ],
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "AetherLink Telegram",
+        "shortDescription": "Private Telegram bridge for your AI agent",
+        "longDescription": "Send notifications, approvals, questions, task updates and files between ChatGPT and your private Telegram bot. Remote connections use OAuth with one-time Telegram pairing.",
+        "developerName": "AetherLink",
+        "category": "Productivity",
+        "capabilities": [
+          "Read",
+          "Write"
+        ],
+        "defaultPrompt": "Check my AetherLink Telegram inbox and tell me whether anything needs my attention.",
+        "websiteURL": "https://github.com/XJle6uIIIeK/AetherLink-Telegram",
+        "composerIcon": "./assets/icon.svg",
+        "logo": "./assets/icon.svg"
+      }
+    }
+  }
+}

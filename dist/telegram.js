@@ -14,6 +14,9 @@ export class TelegramBridge {
     promptRequests = new Map();
     pendingPhotoAlbums = new Map();
     chatIdFile;
+    pairingKeyFile;
+    pairingKey = null;
+    pairingExpiresAt = null;
     defaultTimeout;
     // Remote Shell state
     activeProcesses = new Map();
@@ -32,7 +35,8 @@ export class TelegramBridge {
             fs.mkdirSync(dataDir, { recursive: true });
         this.chatIdFile = path.join(dataDir, 'chat_id.txt');
         this.pairingKeyFile = path.join(dataDir, 'pairing_key.txt');
-        this.pairingKey = process.env.AETHERLINK_PAIRING_KEY || null;
+        this.pairingKey = options?.pairingKey ?? process.env.AETHERLINK_PAIRING_KEY ?? null;
+        this.pairingExpiresAt = options?.pairingExpiresAt ?? null;
         this.taskStore = new TaskStore(path.join(dataDir, 'tasks.sqlite'));
         if (options?.chatId) {
             this.chatId = options.chatId;
@@ -231,10 +235,11 @@ export class TelegramBridge {
                 const text = ctx.message?.text?.trim() ?? '';
                 const match = text.match(/^\/start(?:@\w+)?(?:\s+(.+))?$/);
                 const suppliedKey = match?.[1]?.trim();
-                if (senderId && this.pairingKey && suppliedKey === this.pairingKey) {
+                if (senderId && this.pairingKey && (!this.pairingExpiresAt || Date.now() <= this.pairingExpiresAt) && suppliedKey === this.pairingKey) {
                     this.chatId = senderId;
                     this.saveChatId(senderId);
                     this.pairingKey = null;
+                    this.pairingExpiresAt = null;
                     delete process.env.AETHERLINK_PAIRING_KEY;
                     try { fs.unlinkSync(this.pairingKeyFile); } catch { }
                     console.error(`[Security] Telegram owner paired: ${senderId}`);

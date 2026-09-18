@@ -2,8 +2,10 @@ import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import path from 'node:path';
 
-export function createMcpServer(telegram) {
-  const server = new Server({ name: 'antigravity-telegram', version: '2.0.0' }, { capabilities: { tools: {} } });
+export function createMcpServer(telegram, options = {}) {
+  const oauthScopes = Array.isArray(options.oauthScopes) ? options.oauthScopes : null;
+  const profile = options.profile || null;
+  const server = new Server({ name: 'antigravity-telegram', version: '2.1.0' }, { capabilities: { tools: {} } });
   // ── Tools: List ─────────────────────────────────────────────────────────────
   server.setRequestHandler(ListToolsRequestSchema, async () => ({
       tools: [
@@ -268,12 +270,43 @@ export function createMcpServer(telegram) {
                   required: ['url'],
               },
           },
-      ],
+          ...(profile ? [{
+              name: 'get_profile',
+              description: "Return the Telegram profile represented by this request's authenticated credentials.",
+              inputSchema: { type: 'object', properties: {}, additionalProperties: false },
+              outputSchema: {
+                  '$schema': 'https://json-schema.org/draft/2020-12/schema',
+                  type: 'object',
+                  properties: {
+                      id: { type: 'string', minLength: 1, pattern: '\\S' },
+                      name: { type: 'string' },
+                      nickname: { type: 'string' },
+                  },
+                  required: ['id'],
+                  additionalProperties: false,
+              },
+              annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: false },
+              ...(oauthScopes ? { securitySchemes: [{ type: 'oauth2', scopes: oauthScopes }] } : {}),
+              _meta: { 'openai/profile': true },
+          }] : []),
+      ].map((tool) => oauthScopes && tool.name !== 'get_profile'
+          ? { ...tool, securitySchemes: [{ type: 'oauth2', scopes: oauthScopes }] }
+          : tool),
   }));
   // ── Tools: Call ─────────────────────────────────────────────────────────────
   server.setRequestHandler(CallToolRequestSchema, async (request) => {
       const { name, arguments: args } = request.params;
       try {
+          if (name === 'get_profile') {
+              if (!profile) {
+                  return { content: [{ type: 'text', text: 'Authentication required.' }], isError: true };
+              }
+              return {
+                  isError: false,
+                  structuredContent: profile,
+                  content: [{ type: 'text', text: JSON.stringify(profile) }],
+              };
+          }
           switch (name) {
               // ── tg_notify ──────────────────────────────────────────────────────
               case 'tg_notify': {
