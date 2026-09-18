@@ -2,7 +2,8 @@
   "mcpServers": {
     "aetherlink-telegram": {
       "command": "node",
-      "args": ["start.mjs"]
+      "args": ["start.mjs"],
+      "cwd": "."
     }
   }
 }

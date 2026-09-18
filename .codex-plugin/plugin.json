@@ -1,7 +1,18 @@
 {
   "name": "aetherlink-telegram",
-  "version": "2.2.0",
-  "description": "Local stdio Telegram MCP bridge with one-time pairing.",
+  "version": "2.2.1",
+  "description": "Local Telegram bridge for Codex and ChatGPT Desktop over stdio MCP.",
   "skills": "./skills/",
-  "mcpServers": "./.mcp.json"
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "AetherLink Telegram",
+    "shortDescription": "Local Telegram bridge for your AI agent",
+    "longDescription": "Run AetherLink locally over stdio MCP. Pair a private Telegram bot once, then send notifications, approvals, questions, task updates and files.",
+    "developerName": "AetherLink",
+    "category": "Productivity",
+    "capabilities": ["Read", "Write"],
+    "composerIcon": "./assets/icon.png",
+    "logo": "./assets/icon.png",
+    "defaultPrompt": "Send me a test notification through AetherLink Telegram."
+  }
 }

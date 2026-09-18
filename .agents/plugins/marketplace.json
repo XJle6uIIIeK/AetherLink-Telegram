@@ -1,13 +1,20 @@
 {
-  "name": "aetherlink-telegram",
-  "owner": { "name": "AetherLink" },
-  "metadata": { "description": "Local AetherLink Telegram stdio plugin", "version": "2.2.0" },
+  "name": "aetherlink",
+  "interface": {
+    "displayName": "AetherLink"
+  },
   "plugins": [
     {
       "name": "aetherlink-telegram",
-      "source": "./",
-      "description": "Local stdio Telegram bridge with one-time pairing for MCP agents.",
-      "version": "2.2.0"
+      "source": {
+        "source": "local",
+        "path": "./"
+      },
+      "policy": {
+        "installation": "INSTALLED_BY_DEFAULT",
+        "authentication": "ON_USE"
+      },
+      "category": "Productivity"
     }
   ]
 }
